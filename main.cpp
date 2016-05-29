@@ -49,6 +49,53 @@ void test() {
         assert( treap::search(tree, 6) == &(tree->rchild->lchild) );
         assert( treap::search(tree, 9) == &(tree->rchild->rchild) );
     }
+    { // insert and remove
+        auto tree = std::make_unique<treap::node>(5, 80,
+                std::make_unique<treap::node>(2, 50),
+                std::make_unique<treap::node>(9, 20));
+        treap::insert( tree, 4, 40 );
+        assert( tree->key == 5 );
+        assert( tree->lchild->key == 2 );
+        assert( tree->lchild->rchild->key == 4 );
+        treap::insert( tree, 3, 70 );
+        assert( tree->key == 5 );
+        assert( tree->lchild->key == 3 );
+        assert( tree->lchild->lchild->key == 2 );
+        assert( tree->lchild->rchild->key == 4 );
+        treap::insert( tree, 6, 90 );
+        assert( tree->key == 6 );
+        assert( tree->lchild->key == 5 );
+        assert( tree->rchild->key == 9 );
+        treap::insert( tree, 7, 10 );
+        assert( tree->key == 6 );
+        assert( tree->rchild->key == 9 );
+        assert( tree->rchild->lchild->key == 7 );
+        treap::insert( tree, 8, 60 );
+        assert( tree->key == 6 );
+        assert( tree->rchild->key == 8 );
+        assert( tree->rchild->lchild->key == 7 );
+        assert( tree->rchild->rchild->key == 9 );
+        treap::remove( tree, 8 );
+        assert( tree->key == 6 );
+        assert( tree->rchild->key == 9 );
+        assert( tree->rchild->lchild->key == 7 );
+        treap::remove( tree, 7 );
+        assert( tree->key == 6 );
+        assert( tree->lchild->key == 5 );
+        assert( tree->rchild->key == 9 );
+        treap::remove( tree, 4 );
+        treap::remove( tree, 3 );
+        treap::remove( tree, 6 );
+        assert( tree->key == 5 );
+        assert( tree->lchild->key == 2 );
+        assert( tree->rchild->key == 9 );
+        treap::remove( tree, 5 );
+        assert( tree->key == 2 );
+        assert( tree->rchild->key == 9 );
+        treap::remove( tree, 5 );
+        assert( tree->key == 2 );
+        assert( tree->rchild->key == 9 );
+    }
 }
 
 int main() {

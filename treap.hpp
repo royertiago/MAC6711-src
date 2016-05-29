@@ -56,6 +56,52 @@ namespace treap {
             return search(tree->rchild, key);
         return &tree; // key is here.
     }
+
+    /* Inserts a node with the specified key and priority in the treap.
+     * If the key already exists, the treap is not modified.
+     */
+    void insert( std::unique_ptr<node> & tree, int key, int priority ) {
+        if( !tree ) {
+            tree = std::make_unique<node>(key, priority);
+            return;
+        }
+        if( key < tree->key ) {
+            insert( tree->lchild, key, priority );
+            if( tree->lchild->priority > tree->priority )
+                rotate_right(tree);
+        }
+        if( tree->key < key ) {
+            insert( tree->rchild, key, priority );
+            if( tree->rchild->priority > tree->priority )
+                rotate_left(tree);
+        }
+    }
+
+    /* Delete the root of the given treap.
+     * The tree is assumed to be non-null.
+     */
+    void root_delete( std::unique_ptr<node> & tree ) {
+        if( !tree->lchild )
+            tree = std::move(tree->rchild);
+        else if( !tree->rchild )
+            tree = std::move(tree->lchild);
+        else if( tree->lchild->priority < tree->rchild->priority ) {
+            rotate_left(tree);
+            root_delete(tree->lchild);
+        }
+        else {
+            rotate_right(tree);
+            root_delete(tree->rchild);
+        }
+    }
+
+    /* Erases the given key from the tree.
+     */
+    void remove( std::unique_ptr<node> & tree, int key ) {
+        auto ptr = search(tree, key);
+        if( *ptr ) // ptr is always non null; it points to another pointer
+            root_delete( *ptr );
+    }
 }
 
 #endif // TREAP_HPP
