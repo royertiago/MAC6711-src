@@ -37,6 +37,18 @@ void test() {
         assert(tree->key == A);
         assert(tree->lchild->key == B);
     }
+    { // search
+        auto tree = std::make_unique<treap::node>(5, 0,
+                std::make_unique<treap::node>(3, 0),
+                std::make_unique<treap::node>(8, 0));
+        assert( treap::search(tree, 5) == &tree );
+        assert( treap::search(tree, 3) == &(tree->lchild) );
+        assert( treap::search(tree, 8) == &(tree->rchild) );
+        assert( treap::search(tree, 2) == &(tree->lchild->lchild) );
+        assert( treap::search(tree, 4) == &(tree->lchild->rchild) );
+        assert( treap::search(tree, 6) == &(tree->rchild->lchild) );
+        assert( treap::search(tree, 9) == &(tree->rchild->rchild) );
+    }
 }
 
 int main() {

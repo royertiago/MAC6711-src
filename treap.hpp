@@ -41,6 +41,21 @@ namespace treap {
     void rotate_right( std::unique_ptr<node> & ptr ) {
         circular_shift_unique_ptr(ptr, ptr->lchild, ptr->lchild->rchild);
     }
+
+    /* Returns a pointer to the unique_ptr holding a tree
+     * whose root has the requested key,
+     * or a pointer to the place in the tree the key would be inserted
+     * if it is not in the tree.
+     */
+    std::unique_ptr<node> * search( std::unique_ptr<node> & tree, int key ) {
+        if( !tree ) // key is not in the tree.
+            return &tree;
+        if( key < tree->key )
+            return search(tree->lchild, key);
+        if( tree->key < key )
+            return search(tree->rchild, key);
+        return &tree; // key is here.
+    }
 }
 
 #endif // TREAP_HPP
