@@ -47,14 +47,14 @@ namespace treap {
      * or a pointer to the place in the tree the key would be inserted
      * if it is not in the tree.
      */
-    std::unique_ptr<node> * search( std::unique_ptr<node> & tree, int key ) {
+    std::unique_ptr<node> & search( std::unique_ptr<node> & tree, int key ) {
         if( !tree ) // key is not in the tree.
-            return &tree;
+            return tree;
         if( key < tree->key )
             return search(tree->lchild, key);
         if( tree->key < key )
             return search(tree->rchild, key);
-        return &tree; // key is here.
+        return tree; // key is here.
     }
 
     /* Inserts a node with the specified key and priority in the treap.
@@ -98,9 +98,9 @@ namespace treap {
     /* Erases the given key from the tree.
      */
     void remove( std::unique_ptr<node> & tree, int key ) {
-        auto ptr = search(tree, key);
-        if( *ptr ) // ptr is always non null; it points to another pointer
-            root_delete( *ptr );
+        auto & ptr = search(tree, key);
+        if( ptr ) // ptr is always non null; it points to another pointer
+            root_delete( ptr );
     }
 }
 
