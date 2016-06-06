@@ -5,9 +5,12 @@
 #include <memory>
 
 namespace treap {
+    /* C-like structure representing a treap node.
+     * To have a std::set-like interface, see the treap class below.
+     */
     struct node {
         int key;
-        int priority;
+        unsigned int priority;
         std::unique_ptr<node> lchild, rchild;
 
         node() = default;
@@ -21,7 +24,7 @@ namespace treap {
     /* Assigns ptr2 to ptr1, ptr3 to ptr2, and ptr1 to ptr3,
      * without destroying any object.
      */
-    void circular_shift_unique_ptr( std::unique_ptr<node> & ptr1,
+    inline void circular_shift_unique_ptr( std::unique_ptr<node> & ptr1,
             std::unique_ptr<node> & ptr2, std::unique_ptr<node> & ptr3 )
     {
         ptr1.swap(ptr2);
@@ -31,14 +34,14 @@ namespace treap {
     /* Performs a left rotation.
      * n.rchild is assumed to be non-null.
      */
-    void rotate_left( std::unique_ptr<node> & ptr ) {
+    inline void rotate_left( std::unique_ptr<node> & ptr ) {
         circular_shift_unique_ptr(ptr, ptr->rchild, ptr->rchild->lchild);
     }
 
     /* Performs a right rotation.
      * n.lchild is assumed to be non-null.
      */
-    void rotate_right( std::unique_ptr<node> & ptr ) {
+    inline void rotate_right( std::unique_ptr<node> & ptr ) {
         circular_shift_unique_ptr(ptr, ptr->lchild, ptr->lchild->rchild);
     }
 
@@ -47,7 +50,7 @@ namespace treap {
      * or a pointer to the place in the tree the key would be inserted
      * if it is not in the tree.
      */
-    std::unique_ptr<node> & search( std::unique_ptr<node> & tree, int key ) {
+    inline std::unique_ptr<node> & search( std::unique_ptr<node> & tree, int key ) {
         if( !tree ) // key is not in the tree.
             return tree;
         if( key < tree->key )
@@ -60,7 +63,7 @@ namespace treap {
     /* Inserts a node with the specified key and priority in the treap.
      * If the key already exists, the treap is not modified.
      */
-    void insert( std::unique_ptr<node> & tree, int key, int priority ) {
+    inline void insert( std::unique_ptr<node> & tree, int key, unsigned int priority ) {
         if( !tree ) {
             tree = std::make_unique<node>(key, priority);
             return;
@@ -80,7 +83,7 @@ namespace treap {
     /* Delete the root of the given treap.
      * The tree is assumed to be non-null.
      */
-    void root_delete( std::unique_ptr<node> & tree ) {
+    inline void root_delete( std::unique_ptr<node> & tree ) {
         if( !tree->lchild )
             tree = std::move(tree->rchild);
         else if( !tree->rchild )
@@ -97,11 +100,39 @@ namespace treap {
 
     /* Erases the given key from the tree.
      */
-    void remove( std::unique_ptr<node> & tree, int key ) {
+    inline void remove( std::unique_ptr<node> & tree, int key ) {
         auto & ptr = search(tree, key);
         if( ptr ) // ptr is always non null; it points to another pointer
             root_delete( ptr );
     }
+
+    // std::set-like interface
+    template< typename RNG >
+    class treap {
+        std::unique_ptr<node> root;
+        RNG rng;
+    public:
+        treap( RNG rng ) : rng(rng) {}
+
+        // Returns 1 if the key was found in the treap, 0 otherwise.
+        int count( int key ) {
+            return search(root, key) == nullptr ? 0 : 1;
+        }
+
+        /* Inserts the key in the treap.
+         * Nothing is done if the key is already there.
+         */
+        void insert( int key ) {
+            insert( root, key, rng() );
+        }
+
+        /* Removes the given key from the treap.
+         * Nothing is done if the key is not present.
+         */
+        void erase( int key ) {
+            remove( root, key );
+        }
+    };
 }
 
 #endif // TREAP_HPP
