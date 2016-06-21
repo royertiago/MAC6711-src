@@ -1,5 +1,6 @@
 #include "treap.hpp"
 #include <catch.hpp>
+#include <random>
 
 TEST_CASE( "Treap rotation", "[treap]") {
     constexpr int A = 1, B = 2, alpha = 3, beta = 4, gamma = 5;
@@ -107,4 +108,24 @@ TEST_CASE( "Treap insert and remove", "[treap]" ) {
     treap::remove( tree, 5 );
     CHECK( tree->key == 2 );
     CHECK( tree->rchild->key == 9 );
+}
+
+TEST_CASE( "Treap std::set-like interface", "[treap]" ) {
+    treap::treap<std::mt19937> tree{std::mt19937{}}; // most vexing parse
+    CHECK( tree.count(5) == 0 );
+    tree.insert( 1 );
+    CHECK( tree.count(1) == 1 );
+    tree.insert( 3 );
+    tree.insert( 6 );
+    tree.insert( 12 );
+    tree.insert( 9 );
+    tree.insert( 1 );
+    CHECK( tree.count(3) == 1 );
+    CHECK( tree.count(12) == 1 );
+    CHECK( tree.count(9) == 1 );
+    tree.erase( 3 );
+    tree.erase( 12 );
+    tree.insert( 3 );
+    CHECK( tree.count(3) == 1 );
+    CHECK( tree.count(12) == 0 );
 }

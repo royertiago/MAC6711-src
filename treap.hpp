@@ -116,21 +116,21 @@ namespace treap {
 
         // Returns 1 if the key was found in the treap, 0 otherwise.
         int count( int key ) {
-            return search(root, key) == nullptr ? 0 : 1;
+            return ::treap::search(root, key) == nullptr ? 0 : 1;
         }
 
         /* Inserts the key in the treap.
          * Nothing is done if the key is already there.
          */
         void insert( int key ) {
-            insert( root, key, rng() );
+            ::treap::insert( root, key, rng() );
         }
 
         /* Removes the given key from the treap.
          * Nothing is done if the key is not present.
          */
         void erase( int key ) {
-            remove( root, key );
+            ::treap::remove( root, key );
         }
     };
 }
