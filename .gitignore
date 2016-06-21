@@ -1,0 +1,12 @@
+# Binary output
+*.o
+
+# Makefile dependency tracking
+*.dep.mk
+
+# Vim temporaries
+.*.swp
+
+# Programs generated
+main
+test/test
