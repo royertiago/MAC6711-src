@@ -1,7 +1,6 @@
 #ifndef TREAP_HPP
 #define TREAP_HPP
 
-#include <tuple>
 #include <memory>
 
 namespace treap {
