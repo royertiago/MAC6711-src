@@ -99,5 +99,44 @@ namespace avl {
 
         fix_avl(tree);
     }
+
+    /* Removes the maximum value of the given tree.
+     * The node that contains the maximum value is stored in 'ret'.
+     * The height of the tree is reduced at most by one.
+     */
+    inline void remove_max( std::unique_ptr<node> & tree, std::unique_ptr<node> & ret ) {
+        if( ! tree->rchild ) {
+            // This is the maximum.
+            ret = std::move(tree);
+            tree = std::move(ret->lchild);
+        }
+        else {
+            remove_max( tree->rchild, ret );
+            fix_avl(tree);
+        }
+    }
+
+    /* Removes the given key from the tree.
+     */
+    inline void remove( std::unique_ptr<node> & tree, int key ) {
+        if( !tree ) return;
+        if( key < tree->key )
+            remove( tree->lchild, key );
+        else if( tree->key < key )
+            remove( tree->rchild, key );
+        else {
+            // Key is here.
+            if( ! tree->lchild ) {
+                tree = std::move(tree->rchild);
+                return;
+            }
+            std::unique_ptr<node> tmp;
+            remove_max( tree->lchild, tmp );
+            tmp->lchild = std::move(tree->lchild);
+            tmp->rchild = std::move(tree->rchild);
+            tree = std::move(tmp);
+        }
+        fix_avl(tree);
+    }
 }
 #endif // AVL_HPP
