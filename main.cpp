@@ -1,35 +1,154 @@
+namespace command_line {
+    const char help_message[] =
+" <data structure> <test case> [options]\n"
+"Runs a speed test for the given data structure using the selected test case.\n"
+"<data structure> must be one of\n"
+"    avl - AVL self-balancing tree\n"
+"    rb - std::set red-black self-balancing tree\n"
+"    treap, treap-mersenne - Treap using Mersenne Twister as RNG\n"
+"    treap-xorshift - Treap using xorshift as RNG\n"
+"\n"
+"<test case> must be one of\n"
+"    insert-then-search\n"
+"\n"
+"Options:\n"
+"--runs <N>\n"
+"    Number of times the test case must be run.\n"
+"    Default: 10\n"
+"\n"
+"--seed <N>\n"
+"    Chooses the seed used to generate the test set.\n"
+"    Default: 0\n"
+"\n"
+"--treap-seed <N>\n"
+"    Choose the seed used by the treap RNG.\n"
+"    Default: 1\n"
+"\n"
+"--total-insertions <N>\n"
+"    Total number of insertions that will be done in the tree.\n"
+"    Default: 1 000 000\n"
+"\n"
+"--search-successes <N>\n"
+"    Total number of search operations with keys known to be in the tree.\n"
+"    Default: 800 000\n"
+"\n"
+"--search-failures <N>\n"
+"    Total number of search operations with keys known not to be in the tree.\n"
+"    Default: 400 000\n"
+"\n"
+"--help\n"
+"    Display this text and exit.\n"
+;
+} // namespace command_line
+
+#include <cstdlib>
+#include <iomanip>
 #include <iostream>
 #include <set>
+
+#include "cmdline/args.hpp"
+
 #include "avl.hpp"
 #include "speed_test.hpp"
 #include "treap.hpp"
 #include "xorshift.hpp"
 
-int main() {
-    test_case c = insert_then_search( 1'000'000, 800'000, 400'000, 0 );
+namespace command_line {
+    int (* run_test_case)( const test_case & );
+    test_case (* make_test_case)();
+    int runs = 10;
+    unsigned seed = 0;
+    unsigned treap_seed = 1; // xorshift's seed must not be zero.
+    int total_insertions = 1'000'000;
+    int search_successes = 800'000;
+    int search_failures = 400'000;
 
-    auto avl_maker = [](){ return avl::avl(); };
-    auto treap_maker = [](){ return treap::treap<std::mt19937>{std::mt19937{}}; };
-    auto xorshift_treap_maker = [](){ return treap::treap<xorshift>{xorshift{}}; };
-    auto set_maker = [](){ return std::set<int>(); };
+    void parse( cmdline::args && args ) {
+        while( args.size() > 0 ) {
+            std::string arg = args.next();
+            if( arg == "avl" ) {
+                run_test_case = []( const test_case & c ){
+                    return ::run_test_case([](){ return avl::avl(); }, c );
+                };
+                continue;
+            }
+            if( arg == "rb" ) {
+                run_test_case = []( const test_case & c ){
+                    return ::run_test_case([](){ return std::set<int>(); }, c );
+                };
+                continue;
+            }
+            if( arg == "treap" || arg == "treap-mersenne" ) {
+                run_test_case = []( const test_case & c ){
+                    auto maker = [](){
+                        return treap::treap<std::mt19937>{std::mt19937{treap_seed}};
+                    };
+                    return ::run_test_case( maker, c );
+                };
+                continue;
+            }
+            if( arg == "treap-xorshift" ) {
+                run_test_case = []( const test_case & c ){
+                    auto maker = [](){
+                        return treap::treap<xorshift>{xorshift{treap_seed}};
+                    };
+                    return ::run_test_case( maker, c );
+                };
+                continue;
+            }
 
-    std::cout << "1 million elements, 800k successful searches, 400k failures\n";
+            if( arg == "insert-then-search" ) {
+                make_test_case = [](){
+                    return insert_then_search( total_insertions, search_successes,
+                                                search_failures, seed );
+                };
+                continue;
+            }
 
-    std::cout << "\nAVL:\n";
-    for( int i = 0; i < 10; i++ )
-        std::cout << run_test_case(avl_maker, c) << "ms\n";
+            if( arg == "--runs" ) {
+                args.range(1) >> runs;
+                continue;
+            }
+            if( arg == "--seed" ) {
+                args >> seed;
+                continue;
+            }
+            if( arg == "--treap-seed" ) {
+                args >> treap_seed;
+                continue;
+            }
+            if( arg == "--total-insertions" ) {
+                args.range(1) >> total_insertions;
+                continue;
+            }
+            if( arg == "--search-successes" ) {
+                args.range(0) >> search_successes;
+                continue;
+            }
+            if( arg == "--search-failures" ) {
+                args.range(0) >> search_failures;
+                continue;
+            }
+            if( arg == "--help" ) {
+                std::cout << args.program_name() << help_message;
+                std::exit(0);
+            }
 
-    std::cout << "\nTreap (Mersenne Twister):\n";
-    for( int i = 0; i < 10; i++ )
-        std::cout << run_test_case(treap_maker, c) << "ms\n";
+            std::cerr << args.program_name() << ": Unknown option " << arg << '\n';
+            std::exit(1);
+        }
+    }
+}
 
-    std::cout << "\nTreap (xorshift):\n";
-    for( int i = 0; i < 10; i++ )
-        std::cout << run_test_case(treap_maker, c) << "ms\n";
+int main( int argc, char ** argv ) {
+    command_line::parse( cmdline::args(argc, argv) );
+    test_case c = command_line::make_test_case();
 
-    std::cout << "\nstd::set:\n";
-    for( int i = 0; i < 10; i++ )
-        std::cout << run_test_case(set_maker, c) << "ms\n";
+    std::cout << "Test case prepared.\n";
+    for( int i = 1; i <= command_line::runs; i++ ) {
+        std::cout << "Run:" << std::setw(3) << i << " - Time: "
+            << command_line::run_test_case(c) << "ms\n";
+    }
 
     return 0;
 }
