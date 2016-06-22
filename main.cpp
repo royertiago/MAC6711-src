@@ -11,6 +11,7 @@ namespace command_line {
 "<test case> must be one of\n"
 "    insert-then-search\n"
 "    ascending-insert-then-search\n"
+"    insert-then-remove-then-search\n"
 "\n"
 "Options:\n"
 "--show\n"
@@ -40,6 +41,10 @@ namespace command_line {
 "    Total number of search operations with keys known not to be in the tree.\n"
 "    Default: 400 000\n"
 "\n"
+"--removals <N>\n"
+"    Total number of keys that will be removed from the tree.\n"
+"    Default: 500 000\n"
+"\n"
 "--help\n"
 "    Display this text and exit.\n"
 ;
@@ -66,6 +71,7 @@ namespace command_line {
     int total_insertions = 1'000'000;
     int search_successes = 800'000;
     int search_failures = 400'000;
+    int removals = 500'000;
     bool show = false;
 
     void parse( cmdline::args && args ) {
@@ -117,6 +123,13 @@ namespace command_line {
                 };
                 continue;
             }
+            if( arg == "insert-then-remove-then-search" ) {
+                make_test_case = [](){
+                    return insert_then_remove_then_search( total_insertions,
+                            removals, search_successes, search_failures, seed );
+                };
+                continue;
+            }
 
             if( arg == "--show" ) {
                 show = true;
@@ -144,6 +157,10 @@ namespace command_line {
             }
             if( arg == "--search-failures" ) {
                 args.range(0) >> search_failures;
+                continue;
+            }
+            if( arg == "--removals" ) {
+                args.range(0) >> removals;
                 continue;
             }
             if( arg == "--help" ) {

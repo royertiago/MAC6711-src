@@ -135,4 +135,72 @@ test_case ascending_insert_then_search(
     return ret;
 }
 
+/* Structure to efficiently pick a random number known to be in the tree.
+ */
+struct efficiently_choose_target_to_remove {
+    std::vector<std::pair<int, bool>> keys;
+    // The boolean tells whether the specified key was already choosen or not.
+    int available_keys;
+
+    int get_key( std::mt19937 & rng ) {
+        std::uniform_int_distribution<> new_index(0, keys.size() - 1);
+        int index = new_index(rng);
+        while( !keys[index].second )
+            index = new_index(rng);
+
+        int key = keys[index].first;
+        keys[index].second = false;
+        available_keys--;
+
+        // Resize the vector
+        if( keys.size() > 2 * available_keys )
+            keys.erase( std::remove_if( keys.begin(), keys.end(),
+                        [](auto x){ return !x.second; }
+                        ));
+
+        return key;
+    }
+};
+
+test_case insert_then_remove_then_search(
+    int insertions,
+    int removals,
+    int search_successes,
+    int search_failures,
+    unsigned int seed
+) {
+    std::mt19937 rng(seed);
+    test_case ret( insertions + search_successes + search_failures + removals );
+    auto rem = efficiently_choose_target_to_remove{
+        std::vector<std::pair<int,bool>>(insertions),
+        insertions
+    };
+
+    // Generate the insertions
+    for( int i = 0; i < insertions; i++ ) {
+        ret[i] = operation{ operation_type::insert, 2 * i + 2 };
+        rem.keys[i] = std::make_pair( 2 * i + 2, true );
+    }
+    std::shuffle( ret.begin(), ret.begin() + insertions, rng );
+
+    // Generate the removals
+    for( int i = 0; i < removals; i++ )
+        ret[i+insertions] = operation{ operation_type::erase, rem.get_key(rng) };
+
+    // Generate the searches
+    std::uniform_int_distribution<> success_index(0, rem.keys.size()-1);
+    std::uniform_int_distribution<> failure(0, insertions);
+
+    auto bits = random_bits(search_failures, search_successes, rng);
+    for( int i = 0; i < search_successes + search_failures; i++ )
+        if( bits[i] )
+            ret[i + insertions+removals] =
+                operation{ operation_type::count, rem.keys[success_index(rng)].first };
+        else
+            ret[i + insertions+removals] =
+                operation{ operation_type::count, 2*failure(rng) + 1};
+
+    return ret;
+}
+
 #endif // SPEED_TEST_HPP
