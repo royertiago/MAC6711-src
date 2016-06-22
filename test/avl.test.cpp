@@ -1,6 +1,14 @@
 #include "avl.hpp"
 #include <catch.hpp>
 
+bool is_avl( const std::unique_ptr<avl::node> & tree ) {
+    if( !tree )
+        return true;
+    if( std::abs(avl::height(tree->lchild) - avl::height(tree->rchild)) > 1 )
+        return false;
+    return is_avl( tree->lchild ) && is_avl( tree->rchild );
+}
+
 TEST_CASE( "AVL height and rotation", "[avl]" ) {
     auto tree = 
         std::make_unique<avl::node>( 10,
@@ -13,13 +21,13 @@ TEST_CASE( "AVL height and rotation", "[avl]" ) {
                     std::make_unique<avl::node>( 13, nullptr, nullptr )),
                 std::make_unique<avl::node>( 20, nullptr, nullptr )));
 
-    tree->lchild->rchild->update_height();
-    tree->lchild->update_height();
-    tree->rchild->lchild->rchild->update_height();
-    tree->rchild->lchild->update_height();
-    tree->rchild->rchild->update_height();
-    tree->rchild->update_height();
-    tree->update_height();
+    update_height( tree->lchild->rchild );
+    update_height( tree->lchild );
+    update_height( tree->rchild->lchild->rchild );
+    update_height( tree->rchild->lchild );
+    update_height( tree->rchild->rchild );
+    update_height( tree->rchild );
+    update_height( tree );
 
     SECTION( "Initial heights" ) {
         CHECK( tree->lchild->rchild->h == 0 );
@@ -54,4 +62,48 @@ TEST_CASE( "AVL height and rotation", "[avl]" ) {
         CHECK( tree->h == 3 );
         CHECK( tree->lchild->h == 2 );
     }
+}
+
+TEST_CASE( "AVL insertion and invariant-keeping", "[avl]" ) {
+    std::unique_ptr<avl::node> tree;
+    CHECK( is_avl(tree) );
+
+    avl::insert( tree, 10 );
+    CHECK( is_avl(tree) );
+
+    avl::insert( tree, 20 );
+    CHECK( is_avl(tree) );
+
+    avl::insert( tree, 30 );
+    CHECK( is_avl(tree) );
+
+    avl::insert( tree, 40 );
+    CHECK( is_avl(tree) );
+
+    avl::insert( tree, 50 );
+    CHECK( is_avl(tree) );
+
+    avl::insert( tree, 60 );
+    CHECK( is_avl(tree) );
+
+    avl::insert( tree, 70 );
+    CHECK( is_avl(tree) );
+
+    avl::insert( tree, 49 );
+    CHECK( is_avl(tree) );
+
+    avl::insert( tree, 48 );
+    CHECK( is_avl(tree) );
+
+    avl::insert( tree, 47 );
+    CHECK( is_avl(tree) );
+
+    avl::insert( tree, 46 );
+    CHECK( is_avl(tree) );
+
+    avl::insert( tree, 45 );
+    CHECK( is_avl(tree) );
+
+    avl::insert( tree, 44 );
+    CHECK( is_avl(tree) );
 }

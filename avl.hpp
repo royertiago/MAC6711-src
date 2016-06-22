@@ -19,15 +19,20 @@ namespace avl {
             key(k), lchild(std::move(lchild)), rchild(std::move(rchild))
         {}
 
-        /* Recompute the attribute h from the lchild and rchild nodes.
-         */
-        void update_height() {
-            int l = -1, r = -1;
-            if( lchild ) l = lchild->h;
-            if( rchild ) r = rchild->h;
-            h = std::max(l, r) + 1;
-        }
     };
+
+    /* Returns the height of the given node.
+     * If the node is a null pointer, -1 is returned.
+     */
+    int height( const std::unique_ptr<node> & ptr ) {
+        return ptr ? ptr->h : -1;
+    }
+
+    /* Recompute and set the height attribute from the lchild and rchild nodes.
+     */
+    void update_height( std::unique_ptr<node> & ptr ) {
+        ptr->h = std::max( height(ptr->lchild), height(ptr->rchild) ) + 1;
+    }
 
     /* Assigns ptr2 to ptr1, ptr3 to ptr2, and ptr1 to ptr3,
      * without destroying any object.
@@ -45,8 +50,8 @@ namespace avl {
      */
     inline void rotate_left( std::unique_ptr<node> & ptr ) {
         circular_shift_unique_ptr(ptr, ptr->rchild, ptr->rchild->lchild);
-        ptr->lchild->update_height();
-        ptr->update_height();
+        update_height( ptr->lchild );
+        update_height( ptr );
     }
 
     /* Performs a right rotation.
@@ -55,8 +60,44 @@ namespace avl {
      */
     inline void rotate_right( std::unique_ptr<node> & ptr ) {
         circular_shift_unique_ptr(ptr, ptr->lchild, ptr->lchild->rchild);
-        ptr->rchild->update_height();
-        ptr->update_height();
+        update_height( ptr->rchild );
+        update_height( ptr );
+    }
+
+    /* Make the tree rooted at ptr an AVL tree,
+     * provided that both ptr->lchild and ptr->rchild are AVL trees
+     * whose height differ by at most two.
+     */
+    inline void fix_avl( std::unique_ptr<node> & ptr ) {
+        if( height(ptr->lchild) < height(ptr->rchild) - 1 ) {
+            // There is too much weight in the right.
+            if( height(ptr->rchild->lchild) > height(ptr->rchild->rchild) )
+                rotate_right( ptr->rchild );
+            rotate_left( ptr );
+        }
+        else if( height(ptr->rchild) < height(ptr->lchild) - 1 ) {
+            // Mirrorred situation.
+            if( height(ptr->lchild->rchild) > height(ptr->lchild->lchild) )
+                rotate_left( ptr->lchild );
+            rotate_right( ptr );
+        }
+        else
+            update_height( ptr );
+    }
+
+    /* Inserts the given key in the given tree
+     * and adjust it so that it continues to be an AVL tree.
+     * tree->h is increased by at most one.
+     */
+    inline void insert( std::unique_ptr<node> & tree, int key ) {
+        if( !tree )
+            tree = std::make_unique<node>(key);
+        else if( key < tree->key )
+            insert( tree->lchild, key );
+        else if( tree->key < key )
+            insert( tree->rchild, key );
+
+        fix_avl(tree);
     }
 }
 #endif // AVL_HPP
