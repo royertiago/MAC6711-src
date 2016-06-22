@@ -13,6 +13,9 @@ namespace command_line {
 "    ascending-insert-then-search\n"
 "\n"
 "Options:\n"
+"--show\n"
+"    Show the resulting test case instead of running it.\n"
+"\n"
 "--runs <N>\n"
 "    Number of times the test case must be run.\n"
 "    Default: 10\n"
@@ -63,6 +66,7 @@ namespace command_line {
     int total_insertions = 1'000'000;
     int search_successes = 800'000;
     int search_failures = 400'000;
+    bool show = false;
 
     void parse( cmdline::args && args ) {
         while( args.size() > 0 ) {
@@ -114,6 +118,10 @@ namespace command_line {
                 continue;
             }
 
+            if( arg == "--show" ) {
+                show = true;
+                continue;
+            }
             if( arg == "--runs" ) {
                 args.range(1) >> runs;
                 continue;
@@ -152,6 +160,23 @@ namespace command_line {
 int main( int argc, char ** argv ) {
     command_line::parse( cmdline::args(argc, argv) );
     test_case c = command_line::make_test_case();
+
+    if( command_line::show ) {
+        for( operation & op : c ) {
+            switch( op.type ) {
+                case operation_type::insert:
+                    std::cout << "Insert " << op.key << '\n';
+                    break;
+                case operation_type::erase:
+                    std::cout << "Erase  " << op.key << '\n';
+                    break;
+                case operation_type::count:
+                    std::cout << "Count  " << op.key << '\n';
+                    break;
+            }
+        }
+        return 0;
+    }
 
     std::cout << "Test case prepared.\n";
     for( int i = 1; i <= command_line::runs; i++ ) {
