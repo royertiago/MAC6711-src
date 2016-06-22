@@ -2,6 +2,7 @@
 #define SPEED_TEST_HPP
 
 #include <algorithm>
+#include <chrono>
 #include <random>
 #include <vector>
 
@@ -26,6 +27,37 @@ typedef std::vector<operation> test_case;
  * the used seed is as a parameter.
  * The random number generator is fixed as std::mt19937.
  */
+
+/* Runs the test case, constructing a new tree every time using the functor 'maker'.
+ * Both construction and destruction times are timed.
+ * 'runs' is the number of times the same test case is executed.
+ * Each new run means a call to 'maker'.
+ */
+template< typename TreeMaker >
+int run_test_case( TreeMaker maker, const test_case & test ) {
+    int counter = 0;
+    auto begin = std::chrono::steady_clock::now();
+    {
+        auto tree = maker();
+        for( const operation & op : test ) {
+            switch( op.type ) {
+                case operation_type::insert:
+                    tree.insert(op.key);
+                    break;
+                case operation_type::erase:
+                    tree.erase(op.key);
+                    break;
+                case operation_type::count:
+                    counter += tree.count(op.key); // To avoid compiler optimizations
+                    break;
+            }
+        }
+    }
+    auto end = std::chrono::steady_clock::now();
+
+    int ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+    return ms + (counter == 0);
+}
 
 /* Returns a random vector with exactly 'zeros' values set to 0
  * and exacly 'ones' values set to 1.
