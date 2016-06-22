@@ -160,6 +160,19 @@ struct efficiently_choose_target_to_remove {
 
         return key;
     }
+
+    int peek_key( std::mt19937 & rng ) {
+        std::uniform_int_distribution<> new_index(0, keys.size() - 1);
+        int index = new_index(rng);
+        while( !keys[index].second )
+            index = new_index(rng);
+        return keys[index].first;
+    }
+
+    void push_key( int key ) {
+        keys.push_back( std::make_pair(key, true) );
+        available_keys++;
+    }
 };
 
 test_case insert_then_remove_then_search(
@@ -199,6 +212,67 @@ test_case insert_then_remove_then_search(
         else
             ret[i + insertions+removals] =
                 operation{ operation_type::count, 2*failure(rng) + 1};
+
+    return ret;
+}
+
+test_case mixed_workload(
+    int initial_insertions,
+    int total_insertions,
+    int removals,
+    int search_successes,
+    int search_failures,
+    unsigned int seed
+) {
+    std::mt19937 rng(seed);
+    test_case ret( total_insertions + removals + search_successes + search_failures );
+    auto rem = efficiently_choose_target_to_remove{
+        std::vector<std::pair<int,bool>>(initial_insertions),
+        initial_insertions
+    };
+
+    for( int i = 0; i < total_insertions; i++ )
+        ret[i] = operation{ operation_type::insert, 2 * i + 2 };
+    std::shuffle( ret.begin(), ret.begin() + total_insertions, rng );
+    /* The first initial_insertions values will not be changed anymore.
+     * The other values will be shuffled together with the other values.
+     */
+
+    for( int i = 0; i < initial_insertions; i++ )
+        rem.keys[i] = std::make_pair( ret[i].key, true );
+    // rem is usable.
+
+    for( int i = 0; i < removals; i++ )
+        ret[i+total_insertions].type = operation_type::erase;
+    for( int i = 0; i < search_successes + search_failures; i++ )
+        ret[i+total_insertions+removals].type = operation_type::count;
+    std::shuffle( ret.begin()+initial_insertions, ret.end(), rng );
+    /* All the operation types are correctly set,
+     * and every insert operation has the correct key set.
+     * Now, we will set the keys of the removals and the searches.
+     */
+
+    auto bits = random_bits(search_failures, search_successes, rng);
+    int decision = 0;
+
+    std::uniform_int_distribution<> failure(0, total_insertions);
+
+    for( int i = initial_insertions; i < ret.size(); i++ ) {
+        switch( ret[i].type ) {
+            case operation_type::insert:
+                rem.push_key( ret[i].key );
+                break;
+            case operation_type::erase:
+                ret[i].key = rem.get_key(rng);
+                break;
+            case operation_type::count:
+                if( bits[decision++] )
+                    ret[i].key = rem.peek_key(rng);
+                else
+                    ret[i].key = 2*failure(rng) + 1;
+                break;
+        }
+    }
 
     return ret;
 }

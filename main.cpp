@@ -12,6 +12,7 @@ namespace command_line {
 "    insert-then-search\n"
 "    ascending-insert-then-search\n"
 "    insert-then-remove-then-search\n"
+"    mixed-workload\n"
 "\n"
 "Options:\n"
 "--show\n"
@@ -32,6 +33,10 @@ namespace command_line {
 "--total-insertions <N>\n"
 "    Total number of insertions that will be done in the tree.\n"
 "    Default: 1 000 000\n"
+"\n"
+"--initial-insertions <N>\n"
+"    Number of insertions done in the mixed workload before mixing operations.\n"
+"    Default: 500 000\n"
 "\n"
 "--search-successes <N>\n"
 "    Total number of search operations with keys known to be in the tree.\n"
@@ -69,6 +74,7 @@ namespace command_line {
     unsigned seed = 0;
     unsigned treap_seed = 1; // xorshift's seed must not be zero.
     int total_insertions = 1'000'000;
+    int initial_insertions = 500'000;
     int search_successes = 800'000;
     int search_failures = 400'000;
     int removals = 500'000;
@@ -130,6 +136,13 @@ namespace command_line {
                 };
                 continue;
             }
+            if( arg == "mixed-workload" ) {
+                make_test_case = [](){
+                    return mixed_workload( initial_insertions, total_insertions,
+                            removals, search_successes, search_failures, seed );
+                };
+                continue;
+            }
 
             if( arg == "--show" ) {
                 show = true;
@@ -149,6 +162,10 @@ namespace command_line {
             }
             if( arg == "--total-insertions" ) {
                 args.range(1) >> total_insertions;
+                continue;
+            }
+            if( arg == "--initial-insertions" ) {
+                args.range(1) >> initial_insertions;
                 continue;
             }
             if( arg == "--search-successes" ) {
