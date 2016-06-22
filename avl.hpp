@@ -11,7 +11,7 @@ namespace avl {
     struct node {
         int key;
         int h;
-        std::unique_ptr<node> rchild, lchild;
+        std::unique_ptr<node> lchild, rchild;
 
         node() = default;
         node( int k ) : key(k) {}
