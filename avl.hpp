@@ -138,5 +138,40 @@ namespace avl {
         }
         fix_avl(tree);
     }
+
+    /* Decides whether the given tree has the specified key or not.
+     */
+    bool contains( std::unique_ptr<node> & tree, int key ) {
+        if( ! tree ) return false;
+        if( key < tree->key )
+            return contains( tree->lchild, key );
+        if( tree->key < key )
+            return contains( tree->rchild, key );
+        return true;
+    }
+
+    // std::set-like interface
+    class avl {
+        std::unique_ptr<node> root;
+    public:
+        // Returns 1 if the key was found in the tree, 0 otherwise.
+        int count( int key ) {
+            return ::avl::contains(root, key)? 1 : 0;
+        }
+
+        /* Inserts the key in the treap.
+         * Nothing is done if the key is already there.
+         */
+        void insert( int key ) {
+            ::avl::insert( root, key );
+        }
+
+        /* Removes the given key from the treap.
+         * Nothing is done if the key is not present.
+         */
+        void erase( int key ) {
+            ::avl::remove( root, key );
+        }
+    };
 }
 #endif // AVL_HPP

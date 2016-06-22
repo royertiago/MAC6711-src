@@ -111,3 +111,23 @@ TEST_CASE( "AVL insertion and invariant-keeping", "[avl]" ) {
     avl::remove( tree, 80 );
     CHECK( is_avl(tree) );
 }
+
+TEST_CASE( "AVL std::set-like interface", "[avl]" ) {
+    avl::avl tree;
+    CHECK( tree.count(5) == 0 );
+    tree.insert( 1 );
+    CHECK( tree.count(1) == 1 );
+    tree.insert( 3 );
+    tree.insert( 6 );
+    tree.insert( 12 );
+    tree.insert( 9 );
+    tree.insert( 1 );
+    CHECK( tree.count(3) == 1 );
+    CHECK( tree.count(12) == 1 );
+    CHECK( tree.count(9) == 1 );
+    tree.erase( 3 );
+    tree.erase( 12 );
+    tree.insert( 3 );
+    CHECK( tree.count(3) == 1 );
+    CHECK( tree.count(12) == 0 );
+}
