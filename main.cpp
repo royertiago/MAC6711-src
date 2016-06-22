@@ -10,6 +10,7 @@ namespace command_line {
 "\n"
 "<test case> must be one of\n"
 "    insert-then-search\n"
+"    ascending-insert-then-search\n"
 "\n"
 "Options:\n"
 "--runs <N>\n"
@@ -101,6 +102,14 @@ namespace command_line {
                 make_test_case = [](){
                     return insert_then_search( total_insertions, search_successes,
                                                 search_failures, seed );
+                };
+                continue;
+            }
+            if( arg == "ascending-insert-then-search" ) {
+                make_test_case = [](){
+                    return ascending_insert_then_search(
+                            total_insertions, search_successes,
+                            search_failures, seed );
                 };
                 continue;
             }
