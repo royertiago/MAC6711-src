@@ -32,6 +32,13 @@ struct xorshift_t {
         x(x), y(y), z(z), w(w)
     {}
 
+    /* Uninteresting constructor that just copies the same input to the state bytes.
+     * This constructor exists mainly to make it closer to C++'s random engines.
+     */
+    xorshift_t( std::uint32_t seed ):
+        x(seed), y(seed), z(seed), w(seed)
+    {}
+
     /* Generates a new random number
      * and advances the generator's internal state.
      */
